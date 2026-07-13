@@ -144,7 +144,7 @@
     on(state.map, 'click', async (e) => {
       const { lat, lng } = e.latlng;
       const name = await reverseGeocode(lat, lng);
-      loadLocation(lat, lng, name);
+      loadLocation(lat, lng, name, true);
     });
     setTimeout(() => state.map.invalidateSize(), 200);
   }
@@ -224,11 +224,12 @@
   }
 
   // ---------- Flow ----------
-  async function loadLocation(lat, lon, name) {
+  async function loadLocation(lat, lon, name, preserveZoom = false) {
     const overlay = $('loading-overlay');
     overlay.classList.remove('overlay--hidden');
     try {
-      state.map.flyTo([lat, lon], 9, { duration: 1.2 });
+      const zoom = preserveZoom ? state.map.getZoom() : 9;
+      state.map.flyTo([lat, lon], zoom, { duration: 1.2 });
       const data = await fetchWeather(lat, lon);
       state.current = { lat, lon, name };
       setMarker(lat, lon, data.current && data.current.weather_code);
@@ -279,7 +280,7 @@
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
       const CACHE = 'skydash-v1';
-      const ASSETS = ['./', './index.html', './styles.css', './script.js',
+      const ASSETS = ['./', './index.html', './style.css', './script.js',
         'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
         'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'];
       self.addEventListener('install', (e) => {

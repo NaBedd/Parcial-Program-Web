@@ -59,7 +59,7 @@ body {
   border-radius: var(--radius);
   padding: 2.5rem;
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
@@ -68,7 +68,25 @@ body {
 .login-card__title { font-size: 1.75rem; font-weight: 700; }
 .login-card__title span { color: var(--primary); }
 .login-card__subtitle { color: var(--text-muted); margin-bottom: 0.5rem; }
-.login-card__hint { color: var(--text-muted); font-size: 0.8rem; text-align: center; }
+.login-card__error {
+  background: rgba(248, 81, 73, 0.12);
+  border: 1px solid rgba(248, 81, 73, 0.4);
+  color: var(--danger);
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+
+.creds-box {
+  background: var(--bg-elev-2);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.9rem;
+  font-size: 0.85rem;
+}
+.creds-box__title { font-weight: 600; margin-bottom: 0.35rem; color: var(--text); }
+.creds-box__list { list-style: none; display: flex; flex-direction: column; gap: 0.2rem; color: var(--text-muted); }
+.creds-box__list strong { color: var(--primary); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
 .field { display: flex; flex-direction: column; gap: 0.35rem; }
 .field__label { font-size: 0.85rem; color: var(--text-muted); }
@@ -111,6 +129,31 @@ body {
 .btn--icon { padding: 0.55rem 0.7rem; background: transparent; border-color: var(--border); font-size: 1rem; }
 .btn--block { width: 100%; }
 
+/* ---------- Mode toggle (online/offline) ---------- */
+.btn--mode {
+  border: 1px solid var(--border);
+  background: var(--bg-elev-2);
+  padding: 0.5rem 0.85rem;
+}
+.mode-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--text-muted);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.03);
+  transition: background var(--transition), box-shadow var(--transition);
+}
+.btn--mode-online .mode-dot {
+  background: var(--success);
+  box-shadow: 0 0 0 3px rgba(63, 185, 80, 0.18);
+}
+.btn--mode-offline {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.btn--mode-offline .mode-dot {
+  background: var(--danger);
+  box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.18);
+}
+
 /* ---------- Spinner ---------- */
 .spinner {
   width: 16px; height: 16px;
@@ -139,7 +182,7 @@ body {
 .topbar__logo { font-size: 1.5rem; }
 .topbar__title { font-size: 1.1rem; font-weight: 700; }
 .topbar__title span { color: var(--primary); }
-.topbar__actions { display: flex; gap: 0.5rem; }
+.topbar__actions { display: flex; gap: 0.5rem; align-items: center; }
 
 .search { display: flex; gap: 0.5rem; max-width: 500px; width: 100%; margin: 0 auto; }
 .search__input {
@@ -309,5 +352,3 @@ body {
   .layout { padding: 0.5rem; gap: 0.5rem; }
   .current__meta { grid-template-columns: repeat(3, 1fr); font-size: 0.75rem; }
 }
-
-/* Leaflet dark mode tile filter fix — keep native colors */

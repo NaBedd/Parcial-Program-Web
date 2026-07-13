@@ -2,22 +2,28 @@
 (() => {
   'use strict';
 
+  // ---------- Credenciales por defecto ----------
+  const DEFAULT_USERS = [
+    { user: 'admin', pass: 'skydash123' },
+    { user: 'user',  pass: 'user123' },
+  ];
+
   // ---------- State ----------
   const state = {
     map: null,
     marker: null,
-    current: null, // { lat, lon, name }
+    current: null,
     favorites: [],
+    forcedOffline: false, // toggle manual online/offline
   };
 
   const LS_FAVS = 'skydash.favorites';
   const LS_SESSION = 'skydash.session';
+  const LS_MODE = 'skydash.mode'; // 'online' | 'offline'
 
   // ---------- DOM helpers ----------
   const $ = (id) => document.getElementById(id);
   const on = (el, ev, fn) => el.addEventListener(ev, fn);
-  const showEl = (el) => el.classList.remove('spinner--hidden', 'overlay--hidden', 'net-status--hidden');
-  const hideEl = (el, cls) => el.classList.add(cls);
 
   // ---------- Weather code -> emoji ----------
   function weatherEmoji(code) {
@@ -51,18 +57,42 @@
     $(id).classList.add('view--active');
   }
 
-  // ---------- Login ----------
+  // ---------- Login (con validación real) ----------
+  function validateCredentials(user, pass) {
+    return DEFAULT_USERS.some((u) => u.user === user && u.pass === pass);
+  }
+
   function initLogin() {
     on($('login-form'), 'submit', async (e) => {
       e.preventDefault();
       const btn = $('login-btn');
       const spinner = $('login-spinner');
+      const err = $('login-error');
+      const user = $('login-user').value.trim();
+      const pass = $('login-pass').value;
+
+      err.hidden = true;
+
+      if (!user || !pass) {
+        err.textContent = 'Ingresa usuario y contraseña.';
+        err.hidden = false;
+        return;
+      }
+
       btn.disabled = true;
       spinner.classList.remove('spinner--hidden');
-      await new Promise((r) => setTimeout(r, 900));
-      setSession(true);
+      await new Promise((r) => setTimeout(r, 600));
       spinner.classList.add('spinner--hidden');
       btn.disabled = false;
+
+      if (!validateCredentials(user, pass)) {
+        err.textContent = 'Usuario o contraseña incorrectos.';
+        err.hidden = false;
+        $('login-pass').value = '';
+        return;
+      }
+
+      setSession(true);
       enterDashboard();
     });
   }
@@ -84,6 +114,39 @@
       document.documentElement.setAttribute('data-theme', next);
       localStorage.setItem('skydash.theme', next);
     });
+  }
+
+  // ---------- Modo Online / Offline (manual) ----------
+  function isOffline() {
+    return state.forcedOffline || !navigator.onLine;
+  }
+
+  function renderModeButton() {
+    const btn = $('mode-toggle');
+    const label = $('mode-label');
+    if (!btn) return;
+    const offline = isOffline();
+    label.textContent = offline ? 'Offline' : 'Online';
+    btn.classList.toggle('btn--mode-offline', offline);
+    btn.classList.toggle('btn--mode-online', !offline);
+    btn.setAttribute('aria-pressed', String(offline));
+
+    const net = $('net-status');
+    if (offline) net.classList.remove('net-status--hidden');
+    else net.classList.add('net-status--hidden');
+  }
+
+  function initModeToggle() {
+    const saved = localStorage.getItem(LS_MODE);
+    state.forcedOffline = saved === 'offline';
+    on($('mode-toggle'), 'click', () => {
+      state.forcedOffline = !state.forcedOffline;
+      localStorage.setItem(LS_MODE, state.forcedOffline ? 'offline' : 'online');
+      renderModeButton();
+    });
+    window.addEventListener('online', renderModeButton);
+    window.addEventListener('offline', renderModeButton);
+    renderModeButton();
   }
 
   // ---------- Favorites ----------
@@ -161,7 +224,12 @@
   }
 
   // ---------- APIs ----------
+  function guardOnline() {
+    if (isOffline()) throw new Error('offline');
+  }
+
   async function geocode(query) {
+    guardOnline();
     const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=es&format=json`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('Geocoding failed');
@@ -172,6 +240,7 @@
   }
 
   async function reverseGeocode(lat, lon) {
+    if (isOffline()) return `Lat ${lat.toFixed(2)}, Lon ${lon.toFixed(2)}`;
     try {
       const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&accept-language=es`;
       const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
@@ -186,6 +255,7 @@
   }
 
   async function fetchWeather(lat, lon) {
+    guardOnline();
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
       `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m` +
       `&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=7`;
@@ -237,7 +307,12 @@
       renderForecast(data);
     } catch (err) {
       console.error(err);
-      $('current-location').textContent = 'Error al cargar datos';
+      if (err && err.message === 'offline') {
+        $('current-location').textContent = 'Sin conexión (modo offline)';
+        alert('Estás en modo offline. Activa el modo Online para cargar datos.');
+      } else {
+        $('current-location').textContent = 'Error al cargar datos';
+      }
     } finally {
       overlay.classList.add('overlay--hidden');
     }
@@ -248,6 +323,10 @@
       e.preventDefault();
       const q = $('search-input').value.trim();
       if (!q) return;
+      if (isOffline()) {
+        alert('Estás en modo offline. Activa el modo Online para buscar ciudades.');
+        return;
+      }
       const overlay = $('loading-overlay');
       overlay.classList.remove('overlay--hidden');
       try {
@@ -261,18 +340,6 @@
         overlay.classList.add('overlay--hidden');
       }
     });
-  }
-
-  // ---------- Network status ----------
-  function initNetStatus() {
-    const el = $('net-status');
-    const update = () => {
-      if (navigator.onLine) el.classList.add('net-status--hidden');
-      else el.classList.remove('net-status--hidden');
-    };
-    window.addEventListener('online', update);
-    window.addEventListener('offline', update);
-    update();
   }
 
   // ---------- Service Worker (inline) ----------
@@ -321,6 +388,7 @@
     initMap();
     loadFavorites();
     renderFavorites();
+    renderModeButton();
     setTimeout(() => state.map && state.map.invalidateSize(), 300);
   }
 
@@ -331,7 +399,7 @@
     initLogout();
     initSearch();
     initSaveFav();
-    initNetStatus();
+    initModeToggle();
     initServiceWorker();
     if (isLoggedIn()) enterDashboard();
     else showView('login-view');

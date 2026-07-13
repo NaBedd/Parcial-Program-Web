@@ -6,7 +6,7 @@
   <title>SkyDash-Manager</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <link rel="stylesheet" href="styles.css" /> 
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <!-- LOGIN -->
@@ -14,19 +14,28 @@
     <form id="login-form" class="login-card" novalidate>
       <h1 class="login-card__title">SkyDash<span>Manager</span></h1>
       <p class="login-card__subtitle">Plataforma analítica meteorológica</p>
+
+      <div class="creds-box" aria-label="Credenciales por defecto">
+        <p class="creds-box__title">🔐 Credenciales por defecto</p>
+        <ul class="creds-box__list">
+          <li><strong>admin</strong> / <strong>skydash123</strong></li>
+          <li><strong>user</strong> / <strong>user123</strong></li>
+        </ul>
+      </div>
+
       <label class="field">
         <span class="field__label">Usuario</span>
-        <input type="text" id="login-user" class="field__input" required autocomplete="username" value="demo" />
+        <input type="text" id="login-user" class="field__input" required autocomplete="username" placeholder="admin" />
       </label>
       <label class="field">
         <span class="field__label">Contraseña</span>
-        <input type="password" id="login-pass" class="field__input" required autocomplete="current-password" value="demo" />
+        <input type="password" id="login-pass" class="field__input" required autocomplete="current-password" placeholder="skydash123" />
       </label>
+      <p id="login-error" class="login-card__error" role="alert" hidden>Usuario o contraseña incorrectos.</p>
       <button type="submit" class="btn btn--primary" id="login-btn">
         <span class="btn__label">Ingresar</span>
         <span class="spinner spinner--hidden" id="login-spinner" aria-hidden="true"></span>
       </button>
-      <p class="login-card__hint">Cualquier credencial es válida (demo).</p>
     </form>
   </section>
 
@@ -42,8 +51,12 @@
         <button type="submit" class="btn btn--ghost">Buscar</button>
       </form>
       <div class="topbar__actions">
-        <button id="theme-toggle" class="btn btn--icon" title="Cambiar tema">🌓</button>
-        <button id="logout-btn" class="btn btn--danger">Salir</button>
+        <button id="mode-toggle" class="btn btn--mode" title="Cambiar modo online/offline" type="button">
+          <span class="mode-dot"></span>
+          <span id="mode-label">Online</span>
+        </button>
+        <button id="theme-toggle" class="btn btn--icon" title="Cambiar tema" type="button">🌓</button>
+        <button id="logout-btn" class="btn btn--danger" type="button">Salir</button>
       </div>
     </header>
 

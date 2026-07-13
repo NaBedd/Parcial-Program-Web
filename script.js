@@ -280,7 +280,7 @@
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
       const CACHE = 'skydash-v1';
-      const ASSETS = ['./', './index.html', './style.css', './script.js',
+      const ASSETS = ['./', './index.html', './styles.css', './script.js',
         'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
         'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'];
       self.addEventListener('install', (e) => {
